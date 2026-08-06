@@ -1,0 +1,29 @@
+name: Feature Request
+description: Suggest an improvement to Client Assistant
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Feature type
+      options:
+        - Wizard improvement
+        - New file generated
+        - New command
+        - Integration (email, calendar, etc.)
+        - Documentation
+        - Other
+    validations:
+      required: true

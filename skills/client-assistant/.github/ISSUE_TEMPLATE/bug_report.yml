@@ -1,0 +1,37 @@
+name: Bug Report
+description: The wizard failed, files weren't created correctly, or the persona didn't load
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: step
+    attributes:
+      label: Which wizard step failed?
+      options:
+        - Step 0 — Principal config
+        - Step 1 — The basics
+        - Step 2 — Project context
+        - Step 3 — File generation
+        - Step 4 — Confirmation
+        - /client-assistant intro
+        - Persona not loading on session start
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What went wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS
+      placeholder: "macOS 14 / Windows 11 / Ubuntu 24"
+    validations:
+      required: true

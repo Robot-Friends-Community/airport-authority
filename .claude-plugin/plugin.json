@@ -1,0 +1,24 @@
+{
+  "name": "airport-authority",
+  "version": "1.0.0",
+  "description": "Airport Authority: a session-continuity and project-lifecycle suite for Claude Code. 13 skills (flight-deck, hangar, preflight, flight-engineer, bible-keeper, canon-keeper, session-relaunch, cross-session-brief, beads-team-setup, and bundled helpers), 7 commands (/takeoff, /landing, /alleyoop, /slamdunk, /tower, /airport, /flight-engineer), and 4 hooks that stamp session state, warn on a missed /takeoff, and nudge /landing, takeoff-before-compaction, and long-session checkpoints.",
+  "author": {
+    "name": "Robot Friends",
+    "url": "https://github.com/Robot-Friends-Community"
+  },
+  "homepage": "https://github.com/Robot-Friends-Community/airport-authority",
+  "repository": "https://github.com/Robot-Friends-Community/airport-authority",
+  "license": "MIT",
+  "keywords": [
+    "claude-code",
+    "session",
+    "handoff",
+    "continuity",
+    "takeoff",
+    "landing",
+    "project-lifecycle",
+    "hooks",
+    "hygiene",
+    "flight-deck"
+  ]
+}

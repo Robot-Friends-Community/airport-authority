@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "airport-authority",
+  "version": "1.0.0",
+  "description": "Airport Authority — a session-continuity and project-lifecycle suite for Claude Code, from Robot Friends.",
+  "owner": {
+    "name": "Robot Friends",
+    "url": "https://github.com/Robot-Friends-Community"
+  },
+  "plugins": [
+    {
+      "name": "airport-authority",
+      "description": "13 skills, 7 commands, and 4 session-continuity hooks that keep your Claude Code work state — and your whole project — from ever getting lost between sessions.",
+      "version": "1.0.0",
+      "source": ".",
+      "category": "productivity"
+    }
+  ]
+}

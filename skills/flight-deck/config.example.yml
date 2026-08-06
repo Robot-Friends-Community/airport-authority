@@ -1,0 +1,27 @@
+# Per-user flight-deck configuration — EXAMPLE.
+#
+# Copy this to `config.yml` (same directory) and fill in your values.
+# `config.yml` is per-user / per-machine and is gitignored — it never gets
+# committed to the shared skill repo, so your local paths and identity stay local.
+#
+# If the flight-deck skill is ever reinstalled/updated from source, `config.yml`
+# (being gitignored, not tracked) survives. If it is ever wiped, /takeoff and
+# /landing fall back gracefully: user_id auto-resolves from git/OS, and the
+# central index reports "not configured" (loud + safe) rather than silently drifting.
+
+# --- Identity (multi-user / team mode) -------------------------------------
+# Your author slug. Names the PERSON, not the machine — set the SAME value on
+# every machine you use so your FLIGHT-LOG.<user>.md files converge.
+# Must be [a-z0-9-]. If unset, /takeoff and /landing auto-resolve in this order:
+#   1. this file's user_id
+#   2. git config user.name (slugified)
+#   3. OS username
+#   4. prompt once, then saved here
+# See references/MULTI-USER.md.
+user_id: "your-name"
+
+# --- Central Flight Recorder Index -----------------------------------------
+# Absolute path to the cross-project INDEX.md that /takeoff Step 5 updates.
+# Resolution order: project .flight-recorder.yml `central_index_path` first,
+# then this value, else "not configured" (skipped, reported).
+central_index_path: ""

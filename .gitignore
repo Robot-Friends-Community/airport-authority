@@ -1,0 +1,6 @@
+.env.local
+.env
+generations/
+*.log
+assets/gpt-image-2-manifest.json
+aa-hero-prompt.txt
