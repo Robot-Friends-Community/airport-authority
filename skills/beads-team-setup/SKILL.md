@@ -42,11 +42,11 @@ If bd errors with "Dolt server unreachable" / tries to auto-start Dolt → **no-
 
 **Default recommendation:** if the team has **any always-on box everyone can reach (a homelab or a VPS), use Model C** — it's the only model that gives true real-time concurrent access with zero sync ceremony, and it's not blocked by the no-db gap. Fall back to **Model B** (Dolt remote) if there's no shared server, or **Model A** only if you've verified your bd build honors `no-db`.
 
-> **Reference status (2026-08-05):** **Model C is the reference topology.** The Acme board runs on a shared Dolt `sql-server` on a Proxmox homelab host, reachable over Tailscale — see the Model C recipe below (this is the exact working setup). Model A stays blocked: the installed winget bd build does NOT honor `no-db` (verified 2026-08-04). Don't attempt a live no-db flip on a production board.
+> **RF status (2026-08-05):** **Model C is now the RF reference topology.** The Acme board runs on a shared Dolt `sql-server` on the Proxmox homelab (`curative01-1`), reachable over Tailscale — see the Model C recipe below (this is the exact working setup). Model A stays blocked: the installed winget bd build does NOT honor `no-db` (verified 2026-08-04). Don't attempt a live no-db flip on a production board.
 
 ## Setup — Model C (shared external Dolt sql-server), BEST for teams with an always-on box
 
-This is the reference topology, proven on the Acme board (2026-08-05). One always-on Dolt server; every machine connects to it over a private network (Tailscale). No shared on-drive DB, no push/pull, real concurrent access.
+This is the RF reference topology, proven on the Acme board (2026-08-05). One always-on Dolt server; every machine connects to it over a private network (Tailscale). No shared on-drive DB, no push/pull, real concurrent access.
 
 **1. Run the server on the always-on box's LOCAL disk** (never the network share). Docker matches most homelab setups — a compose stack:
 ```yaml
@@ -96,7 +96,7 @@ Keep the old setup in place as a fallback until verified (back up `metadata.json
 2. In `.beads/config.yaml`:
    ```yaml
    no-db: true            # JSONL is the source of truth; no Dolt server, no lock
-   issue-prefix: "acme"   # your project prefix
+   issue-prefix: "gp"     # your project prefix
    ```
 3. Each user clones the repo locally (C:), runs bd against their **local** clone, and syncs with `git pull --rebase` / `git push`. Beads' JSONL is line-per-issue and merges cleanly; resolve the rare conflict like any git conflict.
 4. **Never** point two machines' `BEADS_DIR` at the same copy on a network share. Each machine = its own local clone.
@@ -109,7 +109,7 @@ Keep the old setup in place as a fallback until verified (back up `metadata.json
 
 ## Per-user identity — so "who created it" actually works
 
-By default every bead's `created_by` is whatever single `actor` the config has (on the Acme board today it's all `team`, because every session wrote under one identity). For real attribution:
+By default every bead's `created_by` is whatever single `actor` the config has (on the Acme board today it's all `your-team`, because every session wrote under one identity). For real attribution:
 
 - Set a **distinct actor per person** on each machine — env var `BD_ACTOR` (e.g. `jordan`, `alex`, `robin`) or `actor:` in that machine's config, or `--actor` per call.
 - Then `created_by` + the event audit trail (`events.jsonl`, enable `events-export: true`) show who did what.
@@ -143,4 +143,4 @@ Full step-by-step in **[references/recovery-playbook.md](references/recovery-pla
 ## Hand-off / integration
 
 - Reference this skill from `project-kickoff`, `repo-bootstrap`, and any engagement-scaffolding flow: **"if the project uses beads and more than one person will touch it, run beads-team-setup and pick a model — Model C (shared external Dolt sql-server) if there's an always-on box everyone can reach, else Model B (Dolt remote), or Model A only if your bd build honors no-db. Never leave the live Dolt DB on a shared drive."**
-- Your global CLAUDE.md documents the `BEADS_DIR` prefix rule per-project; this skill is the *why* and the *fix*.
+- The RF global CLAUDE.md documents the `BEADS_DIR` prefix rule per-project; this skill is the *why* and the *fix*.

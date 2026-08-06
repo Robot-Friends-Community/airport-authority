@@ -128,13 +128,13 @@ A good brief answers these questions for the receiving session:
 
 ## Real Example
 
-**Situation:** A planner session discovered a sibling project (`data-service`) while planning deployment.
+**Situation:** the planner session discovered data-service while planning deployment.
 
 **What happened:**
-1. The planner session ran an Explore agent on `~/projects/data-service`
-2. Discovered: same sidecar port (8766), overlapping UI views, graduation handoff opportunity
-3. Wrote `~/projects/data-service/INTEGRATION-BRIEF.md`
-4. The `data-service` session reads it on next load — knows exactly what the planner expects, what design tokens to use, what the graduation handoff looks like
+1. the planner session ran Explore agent on `~/projects/data-service`
+2. Discovered: same Brain sidecar port (8766), overlapping UI views, graduation handoff opportunity
+3. Wrote `~/projects/data-service`
+4. data-service session reads it on next load — knows exactly what the planner expects, what design tokens to use, what the graduation handoff looks like
 
 **Key insight from this example:** The Brain sidecar was already wired — no code change needed. The brief surfaced it. Without it, both sessions might have built duplicate solutions.
 
