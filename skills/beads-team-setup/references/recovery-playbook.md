@@ -1,6 +1,6 @@
 # Beads / Dolt Recovery Playbook
 
-The step-by-step for a wedged beads board. Written from a shared-NAS setup: a board on a shared NAS (`\\192.168.1.x\shared` mounted as S:) that would not start — every `bd` call errored with `Dolt server unreachable at 127.0.0.1:0` then, on retry, `database "dolt" is locked by another dolt process`. Two machines (two teammates) both pointed `BEADS_DIR` at the same on-share `.beads`.
+The step-by-step for a wedged beads board. Written from a real incident (Acme engagement, 2026-08-04): a board on a shared NAS (`\\192.168.1.x\shared` mounted as S:) that would not start — every `bd` call errored with `Dolt server unreachable at 127.0.0.1:0` then, on retry, `database "dolt" is locked by another dolt process`. Two machines (the user + Alex) both pointed `BEADS_DIR` at the same on-share `.beads`.
 
 **The misdiagnosis to avoid:** it looked like a stale lock held by a dead process. It was NOT. It was the **slow-start-over-SMB pile-up**: Dolt takes ~12s to accept connections when its store is on an SMB share; bd's auto-start times out at ~10s and reports failure while the server is still coming up; the next bd call spawns a second server that collides with the first → "locked." Killing processes made it worse (each attempt left another slow-starting server).
 

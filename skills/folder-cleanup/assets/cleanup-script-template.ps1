@@ -4,7 +4,7 @@
 # Safe to re-run (idempotent). Review before executing.
 
 $ErrorActionPreference = "Stop"
-$root = "[TARGET]"  # e.g. "~/dev/"
+$root = "[TARGET]"  # e.g. "~/projects/"
 
 $summary = @{ MOVED = 0; DELETED = 0; CREATED = 0; SKIPPED = 0; WARNINGS = 0 }
 
