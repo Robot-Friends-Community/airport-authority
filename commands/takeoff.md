@@ -146,7 +146,7 @@ If `.flight-recorder.yml` exists and `enabled: true`:
 3. Check for debrief auto-trigger signals (suggest escalation if detected)
 4. Extract session data according to active mode
 5. Append entry to `FLIGHT-RECORDER.md`
-6. Increment `session_count` in `.flight-recorder.yml`
+6. **Reconcile** `session_count` in `.flight-recorder.yml` to the ACTUAL number of entries in `FLIGHT-RECORDER.md` (count the entry delimiters), not a blind `+1` — a blind increment silently drifts whenever a prior session bypassed this step.
 
 If `.flight-recorder.yml` doesn't exist:
 - Offer to set up the Flight Recorder (see Setup Wizard in SKILL.md)

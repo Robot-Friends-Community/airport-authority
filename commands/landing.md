@@ -90,7 +90,8 @@ Flight Recorder: [N] sessions recorded
 
 Detect the same surfaces (`TOME.md` at root; `.bible-keeper.json` / `BIBLE*.md` depth ≤3).
 
-- **Front-page drift check (the load-bearing bit):** if `TOME.md` exists, compare its **Current Session** marker (session number / date on the front page) against the newest `FLIGHT-RECORDER.md` entry. If the Tome front page lags → surface **"⚠️ Tome front page STALE — N behind the recorder"** in the summary so it gets reconciled at the next `/takeoff` (`/canon-keeper takeoff`).
+- **Front-page drift check (recorder-relative):** if `TOME.md` exists, compare its **Current Session** marker (session number / date on the front page) against the newest `FLIGHT-RECORDER.md` entry. If the Tome front page lags → surface **"⚠️ Tome front page STALE — N behind the recorder"** so it gets reconciled at the next `/takeoff` (`/canon-keeper takeoff`).
+- **Reality probe (catches the frozen-BOTH case — the recorder can be stale too):** the check above misses the worst case — a whole session closed with **no** `/takeoff`, so the recorder AND the Tome are both frozen while the repo moved. So also compare the Tome front-page date against **repo reality**: recent `git log` and any beads closed since that date (`git log --since`, `bd list --status=closed`). If commits/beads advanced but **no** memory surface did → surface **"⚠️ Tome front page STALE — session closed without a /takeoff (repo moved, memory didn't)"**.
 - On a **keeper project** (`TOME.md` present), recommend **`/canon-keeper landing`** as the richer, Tome-first resume.
 - If a **Bible** exists, note its freshness.
 - If **none exist but the project warrants one** (CLAUDE.md + real multi-session / ecosystem build), stage a one-line create nudge (don't force).
