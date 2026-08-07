@@ -10,6 +10,16 @@ Resolve a slug `<user>` (order, first hit wins): `~/.claude/skills/flight-deck/c
 
 Carry `<user>` through the rest of takeoff. Determine the mode from `.flight-recorder.yml multi_user` (default `true` when unset): `true` → per-user flight log + attributed recorder; `false` → legacy single `FLIGHT-LOG.md`, no attribution.
 
+## 0.5. Resolve the lane (one person, many terminals)
+
+**Optional second shard.** After `<user>`, resolve an optional `<lane>` so parallel terminals on the same repo don't squash each other. Order, first hit wins; **no signal → no lane** (write `FLIGHT-LOG.<user>.md` exactly as before):
+
+1. `FLIGHT_DECK_LANE` env var → slugify → `<lane>`.
+2. A lane declared in this session ("this is the sales lane") → use it.
+3. No env var, no declaration → no lane. Only *offer* one (one line, declinable) if the squash-risk condition holds — see [MULTI-USER.md](MULTI-USER.md) §2.5.
+
+When a lane resolves, write to `FLIGHT-LOG.<user>.<lane>.md` throughout takeoff. `<lane>` slugifies like `<user>`. The `FLIGHT-RECORDER.md` is **unchanged** — it stays one shared project timeline; lanes shard only the personal flight log, not the build log.
+
 ## 1. Detect Project Context
 
 **Check for active scaffolding:**
@@ -46,7 +56,7 @@ Collect from conversation and files:
 
 ## 3. Write the Flight Log
 
-**Multi-user mode (`multi_user` ≠ `false`):** write to `FLIGHT-LOG.<user>.md` in the project root — your own file, which only your takeoffs overwrite. A teammate's `FLIGHT-LOG.<other>.md` is never touched. If a legacy plain `FLIGHT-LOG.md` exists and is your own prior handoff (single-author project), rename it to `FLIGHT-LOG.<user>.md`; if its author is unknown or someone else's, leave it and write your own. See [MULTI-USER.md](MULTI-USER.md) §4.
+**Multi-user mode (`multi_user` ≠ `false`):** write to `FLIGHT-LOG.<user>.md` in the project root (or `FLIGHT-LOG.<user>.<lane>.md` when a lane is set — see §0.5) — your own file, which only your takeoffs overwrite. A teammate's `FLIGHT-LOG.<other>.md` is never touched. A legacy plain `FLIGHT-LOG.md` is **never renamed silently**: if it's a router/index file (points at other flight logs) or someone else's, leave it; if it looks like your own prior handoff, **ask before renaming** it to `FLIGHT-LOG.<user>.md`. See [MULTI-USER.md](MULTI-USER.md) §4.
 
 **Legacy mode (`multi_user: false`):** write to `FLIGHT-LOG.md` as before.
 

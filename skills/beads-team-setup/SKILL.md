@@ -21,7 +21,7 @@ The JSONL auto-export is **NOT** cross-machine sync (bd's own docs: *"It is not 
 
 ## ⚠️ FIRST: verify your bd build actually supports no-db (many don't)
 
-`no-db` is documented in `config.yaml` but **some installed builds ignore it** — bd still requires/auto-starts Dolt regardless. **Verified 2026-08-04 on the RF winget build (`SteveYegge.Beads`): `no-db: true` was NOT honored** (bd kept using Dolt; setting `dolt.auto-start: false` on top only made bd fail with "unreachable"). So **do not assume Model A works — test it on a scratch board first:**
+`no-db` is documented in `config.yaml` but **some installed builds ignore it** — bd still requires/auto-starts Dolt regardless. **Verified 2026-08-04 on the RF winget build (then `SteveYegge.Beads`, since renamed `GasTownHall.Beads`): `no-db: true` was NOT honored** (bd kept using Dolt; setting `dolt.auto-start: false` on top only made bd fail with "unreachable"). So **do not assume Model A works — test it on a scratch board first:**
 ```bash
 mkdir /tmp/nodb-test && cd /tmp/nodb-test
 bd init --prefix test && printf 'no-db: true\n' >> .beads/config.yaml
@@ -30,6 +30,17 @@ powershell -c "Get-Process dolt -ea SilentlyContinue | Stop-Process -Force"
 bd create --title="x" --type=task   # if this works with zero dolt -> no-db IS supported
 ```
 If bd errors with "Dolt server unreachable" / tries to auto-start Dolt → **no-db is not supported in your build. Use Model B, or upgrade bd first.**
+
+## ⚠️ Minimum bd version for a shared server (Model C): use the winget build (≥ 1.1.2)
+
+Everyone hitting a shared Model-C server must be on a **modern bd** — the winget build (`GasTownHall.Beads`, renamed from `SteveYegge.Beads`; ≥ 1.1.2). An **old/manual build** (seen 2026-08-06 with a hand-compiled `0.59.0`) fails against a server-board created by a newer bd, in two ways that *look* like a credential or grant problem but aren't:
+
+1. **No `.beads/.env` auto-load** → bd sends **no password** → `Error 1045 (28000): Access denied for user 'root'`. Identical to a wrong password from the client side, so it burns time on grants/1Password when the real cause is the bd version. (The `.env` auto-load is confirmed on the winget build; it does not exist in 0.59.0.)
+2. **Schema mismatch on connect** → even once you supply the password in-process, an old bd tries to **initialize schema** against the shared board and fails building the `ready_issues` view: `Error 1105 (HY000): table "d" does not have column "depends_on_id"` — the modern board's `dependencies` table uses `depends_on_issue_id`, not the old `depends_on_id`.
+
+**Good news / bad news:** a failed schema-init from an old client is **self-contained** — its `CREATE ready_issues view` errors *without replacing* the existing good view, so it can't corrupt the shared board (verified: 556-issue board intact after a 0.59.0 hit). But don't rely on that as a safety net — **gate the version instead.**
+
+**Fix:** `winget install --id GasTownHall.Beads` (or `winget upgrade --id GasTownHall.Beads`) to ≥ 1.1.2, then re-run the connect. (If an old install still shadows it, the winget `Links/bd` shim and the `GasTownHall.Beads` package dir hold the new build — rename any stale `bd` earlier in PATH, e.g. a hand-built `~/.local/bin/bd` or a leftover `SteveYegge.Beads` package `bd.exe`, to `.bak`.) Onboarding a teammate to a Model-C board? Confirm their `bd version` **first** — a clear "upgrade bd" beats a day lost to "Access denied."
 
 ## Pick the model (decision table)
 
@@ -128,6 +139,7 @@ If `bd ready` returns the wrong prefix (e.g. `beads-` instead of `acme-`), that'
 
 Full step-by-step in **[references/recovery-playbook.md](references/recovery-playbook.md)**. The 30-second version:
 
+0. **`Access denied for user 'root'` or a `ready_issues` / `depends_on_id` schema error on a Model-C board is a bd VERSION gap, not a lock or a bad credential** — check `bd version` and upgrade to the winget build (≥ 1.1.2) *before* touching grants or 1Password (see the minimum-version section above).
 1. **Don't trust "locked" at face value.** Check for live Dolt on ALL machines: `Get-Process dolt`. If **zero** dolt.exe anywhere yet still "locked," it's almost always the **slow-start-over-SMB pile-up**, not a dead-process lock.
 2. **Prove it:** start Dolt manually on a fixed port with real patience, and watch the log:
    ```bash

@@ -54,6 +54,55 @@ function statePath(sessionId) {
   return path.join(STATE_DIR, `${safe}.json`);
 }
 
+function claimsPath(sessionId) {
+  const safe = String(sessionId || 'unknown').replace(/[^A-Za-z0-9_-]/g, '_');
+  return path.join(STATE_DIR, `${safe}.claims.json`);
+}
+
+/**
+ * Single-owner guard against duplicate hook firings.
+ *
+ * When a teammate has BOTH the legacy hand-placed hooks (copied into ~/.claude
+ * by install.sh) AND the airport-authority plugin installed, Claude invokes two
+ * copies of the SAME hook for one event, back to back. This would double-count
+ * turns, double-stamp state, and print every SessionStart nudge twice.
+ *
+ * The two copies share this state dir, so the first to run "claims" the event
+ * for a short window; a sibling copy that finds a fresh claim bows out. Kept in
+ * a SEPARATE tiny file (not the session state) so it never disturbs the state
+ * skeleton. Real successive events — session starts, user turns — are seconds
+ * apart, far outside the window, so a genuine event is never suppressed.
+ *
+ * @returns {boolean} true if THIS invocation should proceed; false if a sibling
+ *   copy just handled the same event.
+ */
+function claimEvent(sessionId, event, windowMs) {
+  if (!sessionId || !event) return true; // can't dedupe without keys — don't block a hook
+  try {
+    if (!ensureDir()) return true;
+    const p = claimsPath(sessionId);
+    let claims = {};
+    try {
+      if (fs.existsSync(p)) {
+        const parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
+        if (parsed && typeof parsed === 'object') claims = parsed;
+      }
+    } catch (_) {
+      claims = {}; // corrupt claims file — start clean, never block on it
+    }
+    const now = Date.now();
+    const last = claims[event];
+    if (typeof last === 'number' && now - last < windowMs) return false; // sibling handled it
+    claims[event] = now;
+    const tmp = `${p}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(claims));
+    fs.renameSync(tmp, p); // torn-write-safe
+    return true;
+  } catch (_) {
+    return true; // a dedupe failure must never cost a hook its run
+  }
+}
+
 function readState(sessionId) {
   if (!sessionId) return null;
   try {
@@ -116,8 +165,11 @@ function sweepStale(maxAgeMs = STALE_MAX_AGE_MS) {
 
 module.exports = {
   STATE_DIR,
+  STALE_MAX_AGE_MS,
   log,
   statePath,
+  claimsPath,
+  claimEvent,
   readState,
   writeState,
   deleteState,

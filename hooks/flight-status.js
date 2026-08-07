@@ -15,6 +15,16 @@
  *
  *  3. NUDGE /landing when a FLIGHT-LOG.*.md handoff exists in the project.
  *
+ *  4. SURFACE any unsent Flight Ops alerts (durable-write failure, Tome drift,
+ *     uncommitted pileup, failing CI) that hooks/skills queued locally. This is
+ *     the guaranteed, network-free delivery path — even offline you see what
+ *     bit you; /flight-engineer later flushes them to Slack #rf-alerts.
+ *
+ *  5. SELF-HEAL (v1.1 Component 3, Tier A): a janitor pass over AA's OWN state
+ *     dir (lib/self-heal.js) — quarantine any corrupt state file (original kept
+ *     as .bak) and prune dead orphans, announced. Replaces the silent sweep.
+ *     Bounded to AA bookkeeping; never the repo, your work, or git history.
+ *
  * A hook must never break a session: everything is wrapped, and we always
  * print a valid response and exit 0.
  */
@@ -22,6 +32,9 @@
 const fs = require('fs');
 const path = require('path');
 const state = require('./lib/session-state');
+const alert = require('./lib/alert');
+const selfHeal = require('./lib/self-heal');
+const tomeHeal = require('./lib/tome-heal');
 
 function relativeTime(isoString) {
   if (!isoString) return 'unknown time';
@@ -64,21 +77,66 @@ process.stdin.on('end', () => {
     const cwd = data.cwd;
     const sessionId = data.session_id;
 
+    // C2: bow out if a sibling hook copy (legacy ~/.claude install + plugin both
+    // present) just handled this same SessionStart — avoids a double stamp and
+    // double-printed nudges. Session starts never repeat within the window.
+    if (sessionId && !state.claimEvent(sessionId, 'SessionStart', 2000)) return emit(null);
+
     // (1) Stamp the session start — the crux of the dead-warn fix.
+    // Component 3 self-heal (Tier A) first: a janitor pass over AA's OWN state
+    // dir — quarantine corrupt files (originals preserved as .bak), prune dead
+    // orphans. Announced version of the old silent sweep; never touches the
+    // repo or your work. Runs BEFORE the stamp so a corrupt file for THIS
+    // session (e.g. a resumed/re-fired start) is freed and re-stamped valid.
+    let healResult = null;
     if (sessionId) {
-      state.sweepStale();
-      state.writeState(sessionId, {
+      healResult = selfHeal.tidyStateDir();
+      const stamped = state.writeState(sessionId, {
         sessionId,
         cwd: cwd || null,
         startTime: new Date().toISOString(),
         turns: 0,
         checkpointNudgedAtTurn: null,
       });
+      // A failed state write means the suite's session tracking is degraded
+      // (missed-takeoff warnings + checkpoint nudges won't fire reliably).
+      // Queue it so it surfaces + reaches #rf-alerts rather than failing silent.
+      if (!stamped) {
+        alert.enqueue({
+          kind: 'durable-write-failure',
+          severity: alert.SEVERITY.YELLOW,
+          message: 'Could not write Airport Authority session state — takeoff warnings and checkpoint nudges may not fire.',
+          cwd: cwd || null,
+          sessionId,
+          detail: 'session-state',
+        });
+      }
     }
 
     if (!cwd) return emit(null);
 
     const messages = [];
+
+    // (0) Announce any self-heal actions taken above (Component 3). Each action
+    // is already logged to hooks.log inside tidyStateDir; this surfaces it once
+    // inline so a repair is never silent.
+    try {
+      const healMsg = selfHeal.summarizeHeal(healResult);
+      if (healMsg) messages.push(healMsg);
+    } catch (err) {
+      state.log('flight-status', `self-heal summarize error: ${err.message}`);
+    }
+
+    // (0b) Tier-B self-heal (v1.2 A1): on a keeper project (TOME.md present),
+    // if the front-page marker has fallen behind the recorder, annotate it in
+    // place (honest note, never a faked date; uncommitted) and surface it. No-op
+    // on non-keeper projects and when the front page is current.
+    try {
+      const tomeMsg = tomeHeal.summarizeTome(tomeHeal.reconcileTomeMarker(cwd));
+      if (tomeMsg) messages.push(tomeMsg);
+    } catch (err) {
+      state.log('flight-status', `tome-heal error: ${err.message}`);
+    }
 
     // (2) Consume a leftover recorder warning (shown once, then deleted).
     try {
@@ -114,11 +172,15 @@ process.stdin.on('end', () => {
       state.log('flight-status', `warning step error: ${err.message}`);
     }
 
-    // (3) Nudge /landing when a handoff exists (FLIGHT-LOG.md or FLIGHT-LOG.<user>.md).
+    // (3) Nudge /landing when a handoff exists. Matches every naming shape:
+    //   FLIGHT-LOG.md · FLIGHT-LOG.<user>.md · FLIGHT-LOG.<user>.<lane>.md
+    //   and hand-rolled hyphen conventions like FLIGHT-LOG-<stream>.md.
+    // The separator class is [.-] (not just '.') so dash-named lane logs are
+    // not invisible to the nudge, /landing and /tower.
     try {
       const hasHandoff = fs
         .readdirSync(cwd)
-        .some((f) => /^FLIGHT-LOG(\..+)?\.md$/i.test(f));
+        .some((f) => /^FLIGHT-LOG([.-].+)?\.md$/i.test(f));
       if (hasHandoff) {
         messages.push(
           [
@@ -129,6 +191,14 @@ process.stdin.on('end', () => {
       }
     } catch (err) {
       state.log('flight-status', `handoff scan error: ${err.message}`);
+    }
+
+    // (4) Surface unsent Flight Ops alerts (network-free delivery path).
+    try {
+      const summary = alert.summarizeForInline();
+      if (summary) messages.push(summary);
+    } catch (err) {
+      state.log('flight-status', `alert surface error: ${err.message}`);
     }
 
     if (messages.length === 0) return emit(null);

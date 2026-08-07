@@ -44,6 +44,40 @@ Do this **once, at the very start of every `/takeoff` and `/landing`**, before t
 
 ---
 
+## 2.5. The lane axis (one person, many terminals)
+
+Per-user logs stop **different people** from squashing each other. But one person can run **many terminals on the same repo at once** — 8 windows, each on a different workstream (Sales, Website, Notifications…). All resolve to the *same* `<user>`, so they'd all write one `FLIGHT-LOG.<user>.md` and squash — the same problem, one axis over.
+
+The **lane** is an optional second shard: a short workstream tag that splits the log per-terminal.
+
+| No lane (default, unchanged) | Lane set |
+|------------------------------|----------|
+| `FLIGHT-LOG.<user>.md` | `FLIGHT-LOG.<user>.<lane>.md` |
+
+`<lane>` is slugified exactly like `<user>` (lowercase, `[a-z0-9-]+`). Example: `FLIGHT-LOG.alex.sales.md`, `FLIGHT-LOG.alex.website.md`.
+
+### Resolving the lane — first hit wins; **no signal → no lane** (default behavior is untouched)
+
+1. **`FLIGHT_DECK_LANE` environment variable.** The clean per-terminal signal: a variable naturally lives in exactly one terminal, so 8 terminals with 8 different values = 8 lanes automatically. Set-and-forget (in a terminal profile, or `FLIGHT_DECK_LANE=sales` when opening the window). This is the primary mechanism.
+2. **A lane declared in-session.** The user can say *"this is the sales lane"* at any point; carry that lane for the rest of this session's takeoffs/landings. This is **ephemeral by design** — it lives in the session's context, not a file (see the note below on why). After a `/clear`, either the env var covers it or the user re-declares.
+3. **No env var, no declaration → no lane.** Write `FLIGHT-LOG.<user>.md` exactly as before. The lane axis is purely additive; single-terminal users never see it.
+
+**When to proactively ask (the "else ask" half — don't nag):** do **not** prompt for a lane on a normal solo takeoff. Offer one only when the squash risk is real and visible:
+- You're about to overwrite an existing `FLIGHT-LOG.<user>.md` whose in-progress objective clearly belongs to a **different** workstream than this session, **or**
+- Sibling lane logs (`FLIGHT-LOG.<user>.*.md`) already exist in this folder but this session has no lane set.
+
+Then a one-line, declinable offer: `This repo looks like it has parallel workstreams. Tag this terminal's lane so it doesn't overwrite the others? (e.g. "sales") [lane / skip]`. On skip, proceed with the default and don't re-nag this session.
+
+### Why not a `.flight-lane` file in the repo?
+
+A file committed/placed in the project is **shared by every terminal open on that repo** — so it can't tell the 8 terminals apart, which is the entire problem. The signal has to be *per-terminal*, and an environment variable is exactly that. (A gitignored per-terminal file would work but is just a clumsier env var.) That's why the lane lives in the environment or the live session, never in a repo file.
+
+### Landing, /tower, and seeing the whole board
+
+Glob `FLIGHT-LOG.*` (the `[.-]` separator, so dash-named and lane logs are both visible). Land into **your own resolved lane** (`FLIGHT-LOG.<user>.<lane>.md` if a lane is set, else `FLIGHT-LOG.<user>.md`, else legacy). List the *other* lanes and users present so you see who/what else is live in the folder — but restore only from your own.
+
+---
+
 ## 3. The `multi_user` toggle
 
 `.flight-recorder.yml` may carry:
@@ -63,8 +97,11 @@ When unset, treat as `true`. Recorder attribution (`by:`) is cheap and harmless 
 
 A project built before multi-user mode has a plain `FLIGHT-LOG.md` and an unattributed `FLIGHT-RECORDER.md`. Handle gracefully — never destroy prior state:
 
-- **Takeoff:** write `FLIGHT-LOG.<user>.md` going forward. If a legacy `FLIGHT-LOG.md` exists **and** it is the current user's own prior handoff (single-author project — its content matches your work, or you're the only person here), rename it to `FLIGHT-LOG.<user>.md`. If its author is unknown or clearly someone else, **leave it untouched** and just write your own.
-- **Landing:** still read legacy `FLIGHT-LOG.md` as a fallback when no `FLIGHT-LOG.<current-user>.md` exists.
+- **Takeoff:** write `FLIGHT-LOG.<user>.md` going forward. A legacy `FLIGHT-LOG.md` may be migrated by renaming it to `FLIGHT-LOG.<user>.md` — but **never rename it silently**, and never rename these two kinds:
+  - **A router / index `FLIGHT-LOG.md`.** Some users keep a hand-rolled `FLIGHT-LOG.md` that is *not* a session handoff but a **table of contents pointing at other flight logs** (lane logs, per-stream logs). Signs: it links to or lists multiple other `FLIGHT-LOG*` files, has no single-session frontmatter (`objective`/`progress`/`next action`), or reads as an index. Renaming it would orphan every log it points at and break the user's landing path. **Leave it untouched.**
+  - **Someone else's handoff.** If the author is unknown or clearly not you, leave it and just write your own.
+  - Otherwise — it looks like *your own* prior single-session handoff — **ask before renaming**: `Found a legacy FLIGHT-LOG.md that looks like your earlier handoff. Rename it to FLIGHT-LOG.<user>.md? [Y/n]`. On decline, leave it and write your own alongside. The migration is a convenience, never a silent mutation.
+- **Landing:** still read legacy `FLIGHT-LOG.md` as a fallback when no `FLIGHT-LOG.<current-user>.md` exists — unless it is a router/index (above), in which case follow its pointers rather than loading it as a handoff.
 - **Recorder:** no migration needed. Old entries simply lack a `by:` line; new ones add it. Never rewrite historical entries to backfill authorship.
 
 ---

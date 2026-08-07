@@ -2,19 +2,22 @@
 
 The `/landing` command restores context from a handoff file and suggests the next action.
 
-## 0. Resolve Current User (multi-user / team mode)
+## 0. Resolve Current User + Lane (multi-user / team mode)
 
 **Do this first.** Resolve a slug `<user>` (order, first hit wins): `~/.claude/skills/flight-deck/config.yml` `user_id` → `git config user.name` (slugified) → OS username → prompt once and save. Full rules in [MULTI-USER.md](MULTI-USER.md). You land into **your own** flight log, not a teammate's.
+
+Then resolve an optional `<lane>` (for one person running many terminals on the same repo): `FLIGHT_DECK_LANE` env var → a lane declared this session → else no lane. See [MULTI-USER.md](MULTI-USER.md) §2.5. With a lane set, you land into **your lane's** log.
 
 ## 1. Locate Handoff
 
 Check in order (project root and git root):
-1. `FLIGHT-LOG.<user>.md` — **your own** handoff (multi-user mode)
-2. `FLIGHT-LOG.md` — legacy single-user handoff (fallback)
-3. `HANDOFF-ALLEYOOP.md` (legacy)
-4. GSD: `.planning/phases/*/.continue-here.md`
+1. `FLIGHT-LOG.<user>.<lane>.md` — **your lane's** handoff (only when a lane is resolved)
+2. `FLIGHT-LOG.<user>.md` — **your own** handoff (multi-user mode)
+3. `FLIGHT-LOG.md` — legacy single-user handoff (fallback). If it's a **router/index** (lists/points at other flight logs rather than a single session), follow its pointers instead of loading it as a handoff — do **not** treat it as your session state.
+4. `HANDOFF-ALLEYOOP.md` (legacy)
+5. GSD: `.planning/phases/*/.continue-here.md`
 
-**Surface teammates, don't load them.** Glob `FLIGHT-LOG.*.md` in the project root. If any belong to a user other than `<user>`, list them in the summary (name + how stale) so you know who else is in this folder — but restore context **only from your own** log. Offer to peek at a teammate's on request; never overwrite it.
+**Surface the whole board, don't load it.** Glob `FLIGHT-LOG.*` in the project root (separator `[.-]`, so lane logs and hand-rolled dash-named logs are both visible). List any belonging to **other lanes of yours** or to **other users** in the summary (name/lane + how stale) so you see everything live in this folder — but restore context **only from your own** resolved log. Offer to peek at another on request; never overwrite it.
 
 If nothing is found, offer to scan recent git history or start fresh.
 

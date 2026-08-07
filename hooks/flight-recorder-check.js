@@ -30,6 +30,7 @@
 const fs = require('fs');
 const path = require('path');
 const state = require('./lib/session-state');
+const alert = require('./lib/alert');
 
 function readYamlField(content, key) {
   const match = content.match(new RegExp(`^\\s*${key}:\\s*(.+)$`, 'm'));
@@ -107,21 +108,35 @@ process.stdin.on('end', () => {
     }
 
     const warningPath = path.join(cwd, '.flight-recorder-warning.json');
-    fs.writeFileSync(
-      warningPath,
-      JSON.stringify(
-        {
-          missedAt: new Date().toISOString(),
-          reason,
-          sessionStarted: sessionStart ? sessionStart.toISOString() : null,
-          recorderLastUpdated: recorderMtime.toISOString(),
-          cwd,
-        },
-        null,
-        2
-      )
-    );
-    state.log('flight-recorder-check', `warning written (recorder last updated ${recorderMtime.toISOString()})`);
+    try {
+      fs.writeFileSync(
+        warningPath,
+        JSON.stringify(
+          {
+            missedAt: new Date().toISOString(),
+            reason,
+            sessionStarted: sessionStart ? sessionStart.toISOString() : null,
+            recorderLastUpdated: recorderMtime.toISOString(),
+            cwd,
+          },
+          null,
+          2
+        )
+      );
+      state.log('flight-recorder-check', `warning written (recorder last updated ${recorderMtime.toISOString()})`);
+    } catch (err) {
+      // Couldn't leave the missed-takeoff breadcrumb — queue it so the lapse
+      // still reaches the next session + #rf-alerts instead of vanishing.
+      state.log('flight-recorder-check', `could not write warning: ${err.message}`);
+      alert.enqueue({
+        kind: 'durable-write-failure',
+        severity: alert.SEVERITY.YELLOW,
+        message: 'Session ended without /takeoff and the recorder-warning breadcrumb could not be written.',
+        cwd,
+        sessionId,
+        detail: 'recorder-warning',
+      });
+    }
     return finish(sessionId);
   } catch (err) {
     state.log('flight-recorder-check', `unexpected error: ${err.message}`);
