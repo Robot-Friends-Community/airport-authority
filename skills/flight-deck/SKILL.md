@@ -20,7 +20,9 @@ The flight log is short-term memory. The Flight Recorder is long-term memory.
 
 ## Multi-user / team mode
 
-More than one person can share a project folder without their takeoffs squashing each other. Each person's session state lives in their **own** `FLIGHT-LOG.<user>.md`; the shared `FLIGHT-RECORDER.md` stays one project-wide timeline with every entry attributed `by: <user>`. The current user auto-resolves from `config.yml` → git → OS (set-once, no per-session friction). Toggle with `.flight-recorder.yml multi_user` (default on). See [MULTI-USER.md](references/MULTI-USER.md).
+More than one person can share a project folder without their takeoffs squashing each other. Each person's session state lives in their **own** `FLIGHT-LOG.<user>.md`; the shared `FLIGHT-RECORDER.md` stays one project-wide timeline with every entry attributed `by: <user>`. The current user auto-resolves from `config.yml` → git → OS (set-once, no per-session friction). Toggle with `.flight-recorder.yml multi_user` (default on).
+
+**One person, many terminals** on the same repo (e.g. 8 windows, each a different workstream) get an optional **lane** axis — `FLIGHT-LOG.<user>.<lane>.md` — so parallel terminals don't squash each other either. The lane is set per-terminal via the `FLIGHT_DECK_LANE` env var, or just declared in-session; no lane = unchanged single-log behavior. See [MULTI-USER.md](references/MULTI-USER.md) §2.5.
 
 ## Commands
 

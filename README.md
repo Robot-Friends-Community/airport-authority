@@ -134,7 +134,7 @@ Wired automatically once installed:
 1. **SessionStart** — stamps session state and, if a flight log exists for you, nudges `/landing`.
 2. **SessionEnd** — warns if you ended without a `/takeoff` so nothing is stranded.
 3. **PreCompact** — nudges `/takeoff` before context compaction eats your state.
-4. **Stop** — after a long session, nudges a checkpoint (a `/takeoff` + `/clear`) once, so you stay in the fresh-context zone.
+4. **Stop** — after a long session, nudges a checkpoint (a `/takeoff` + `/clear`) once; and every Nth turn runs a quick offline health probe that flags work-at-risk (uncommitted pileup, unpushed commits) to the Flight Ops alert queue.
 <!-- END:INVENTORY -->
 
 ---
