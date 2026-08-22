@@ -149,8 +149,9 @@ If `.flight-recorder.yml` exists and `enabled: true`:
 6. **Reconcile** `session_count` in `.flight-recorder.yml` to the ACTUAL number of entries in `FLIGHT-RECORDER.md` (count the entry delimiters), not a blind `+1` — a blind increment silently drifts whenever a prior session bypassed this step.
 
 If `.flight-recorder.yml` doesn't exist:
-- Offer to set up the Flight Recorder (see Setup Wizard in SKILL.md)
-- If declined, proceed with handoff-only
+- **Actively OFFER to set it up** (see Setup Wizard in SKILL.md) whenever the project **warrants one** (a real multi-session / ecosystem build, or it already has a `FLIGHT-LOG*.md` — meaning takeoffs have been running handoff-only with no build log). Default **N**, skippable, but make the offer explicit — do NOT bury it or treat "not configured" as a silent skip.
+- If the user accepts, also offer to **seed a reconstructed Session-1 backfill** (from `git log` + docs) so pre-recorder history isn't lost, then append this session as the next entry.
+- **Record the outcome** (configured+appended / offered→created / offered→declined / not-warranted / not-configured) — it MUST surface in the Postflight banner (see the ⚠️ gap line), never be silently skipped. This is the exact failure that left a busy project with no recorder for many sessions.
 
 **After writing a Flight Recorder entry**, update the central index (if one is configured):
 - Resolve `central_index_path` from `.flight-recorder.yml` or the flight-deck `config.yml`; if it resolves to an `INDEX.md`, use it. If no central index is configured, skip this — it's optional.
@@ -191,6 +192,7 @@ ls BIBLE*.md */BIBLE*.md **/BIBLE*.md 2>/dev/null | head   # Bibles (depth ≤3)
   ✅ Flight log      FLIGHT-LOG.<user>.md
   ✅ Flight Recorder Entry #N appended ([mode])   ← omit if not configured
   ✅ Bible / Tome    [front page refreshed + log appended]   ← omit if not configured
+  ⚠️ Gaps            [warranted-but-missing surface + its fix, e.g. "Flight Recorder not set up → /takeoff init-recorder"]   ← REQUIRED line whenever a warranted surface (recorder / Tome / Bible) is missing; omit only if there are none
 
   📋 Objective   [brief]
   📊 Progress    [X]% · [completed]/[total] items
