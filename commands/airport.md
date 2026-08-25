@@ -37,6 +37,8 @@ If identity already exists, skip silently to routing.
 - **Empty / near-empty** — no `CLAUDE.md`, no `.git`, no source → *unscaffolded*.
 - **Fresh project** — has code/`.git` but no Flight Deck surfaces (no `FLIGHT-LOG*.md`, `.flight-recorder.yml`, `TOME.md`, `BIBLE*.md`) → *unmanaged*.
 - **Scaffolded** — already has one or more Flight Deck / durable-memory surfaces → *managed*.
+
+⚠️ **"Managed" does NOT mean "complete."** A project can be *partially* scaffolded — e.g. it has a `FLIGHT-LOG*.md` (so it isn't "fresh") but has **no `.flight-recorder.yml`**, so every takeoff has silently run handoff-only with no accumulating build log. Always run the **surface-gap check** in routing (below); never assume a managed project has all the surfaces it should.
 </step>
 
 <step name="route">
@@ -46,7 +48,14 @@ If identity already exists, skip silently to routing.
 
 **Unmanaged (fresh project, no surfaces)** → offer the lighter-weight setup: initialize a Flight Recorder (`/takeoff init-recorder`), optionally a Tome/Bible if it's canon-bearing, and a first `/takeoff` to lay down a flight log. Don't force hangar's full scaffold on an existing codebase.
 
-**Managed (scaffolded)** → present the action menu for where they are:
+**Managed (scaffolded)** → FIRST run the **surface-gap check**, THEN present the action menu.
+
+*Surface-gap check* — detect what's missing but warranted, and offer to close each gap (all skippable, default N, never forced):
+- **Flight Recorder** — if there's a flight log / real multi-session history but **no `.flight-recorder.yml`**, the build log was never turned on. Offer `/takeoff init-recorder`, and offer to **seed a reconstructed Session-1 backfill** (from `git log` + docs) so the pre-recorder history isn't lost. This is the most common gap — check it every time.
+- **Tome / Bible** — only if the project is **canon-bearing** (ecosystem / multi-repo / lore, or a real multi-session build with cross-cutting decisions) and has neither `TOME.md` nor `BIBLE*.md`/`.bible-keeper.json`: offer to create one (`/canon-keeper` for a Tome, `/bible-keeper` for a Bible). Don't offer on a small single-purpose repo.
+- Report each surface as present / just-created / offered→declined so nothing is silently skipped.
+
+Then the action menu for where they are:
 - `/landing` — resume from your flight log (recommend if a `FLIGHT-LOG.<user>.md` exists)
 - `/takeoff` — save state before you clear
 - `/tower` — see the whole fleet, not just here

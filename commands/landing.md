@@ -50,6 +50,34 @@ ls -t .planning/phases/*/.continue-here.md 2>/dev/null | head -1
 - Offer to check recent projects in your workspace root (e.g. `~/projects/`)
 </step>
 
+<step name="detect-unclean-exit">
+**Check whether the previous session ended cleanly. If not, enter Recovery mode FIRST.**
+
+The normal resume trusts that the handoff + recorder describe reality. After a crash /
+accidental `/exit` / a session that never ran `/takeoff`, they don't — the repo moved but
+the durable memory froze. Detect the **unclean-exit fingerprint** (any one is enough):
+
+```bash
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+# 1) explicit warning flag dropped by the recorder hook
+test -f "$GIT_ROOT/.flight-recorder-warning.json" && echo "unclean:warning-file"
+# 2) repo moved but recorder didn't — newest commit newer than the newest recorder entry
+git -C "$GIT_ROOT" log -1 --format=%cd --date=iso
+# (compare against the date of the last FLIGHT-RECORDER.md entry)
+# 3) handoff older than HEAD
+```
+
+Also enter Recovery mode if the user explicitly says they crashed / exited by accident /
+"recover" / "pick up after a crash".
+
+**If the fingerprint is present → follow the skill's `references/RECOVERY.md`**
+(establish last known-good → place the crash on the git timeline → classify untracked files
+by MTIME → validate surviving media → recover unsaved deliverables → reconstruct the missing
+recorder entry via `/takeoff`), THEN continue the normal landing below.
+
+**If it ended cleanly → skip this step** and resume normally.
+</step>
+
 <step name="read-handoff">
 **Parse handoff file:**
 

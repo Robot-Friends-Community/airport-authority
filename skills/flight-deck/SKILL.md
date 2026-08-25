@@ -1,6 +1,6 @@
 ---
 name: flight-deck
-description: Create context handoff files when clearing context and resume seamlessly in new sessions. Optionally records a Flight Recorder (black box) build log that accumulates across sessions. USE WHEN user says "takeoff", "landing", "alleyoop", "slamdunk", "handoff", "pause", "context handoff", "save state", "resume", "pick up where we left off", "continue from last session", "flight recorder", "black box", "check the black box", or is about to clear context.
+description: Create context handoff files when clearing context and resume seamlessly in new sessions. Optionally records a Flight Recorder (black box) build log that accumulates across sessions. USE WHEN user says "takeoff", "landing", "alleyoop", "slamdunk", "handoff", "pause", "context handoff", "save state", "resume", "pick up where we left off", "continue from last session", "flight recorder", "black box", "check the black box", "recover", "recover the session", "I exited by accident", "pick up after a crash", "the session crashed", or is about to clear context, or is returning after an unclean exit (session ended without a takeoff).
 ---
 
 # Flight Deck
@@ -32,6 +32,7 @@ More than one person can share a project folder without their takeoffs squashing
 | `/takeoff debrief` | Create handoff + run full debrief interview for the Flight Recorder |
 | `/takeoff init-recorder` | Configure Flight Recorder for the current project (wizard) |
 | `/landing` (or `/slamdunk`) | Restore context and suggest next action |
+| `/landing` after an unclean exit | Auto-enters **Recovery mode** (see [RECOVERY.md](references/RECOVERY.md)) — finds what the crashed session did, recovers unsaved deliverables, reconstructs the missing recorder entry — *before* the normal resume |
 
 ## Durable-memory parity (keeper / bible projects)
 
@@ -42,5 +43,6 @@ The Flight Recorder is not the only memory surface. If a project has a **Tome** 
 - [HANDOFF.md](references/HANDOFF.md) — Full takeoff process: detect context, gather state, write FLIGHT-LOG.md, append to recorder
 - [FLIGHT-RECORDER.md](references/FLIGHT-RECORDER.md) — Flight Recorder: setup wizard, recording modes, capture lenses, entry format, scaffolding detection
 - [RESUME.md](references/RESUME.md) — Full landing process: locate handoff, load context, present summary, suggest next action
+- [RECOVERY.md](references/RECOVERY.md) — Recovery mode: resume after an unclean exit (crash / accidental `/exit` / no takeoff) — detect the unclean-exit fingerprint, recover unsaved deliverables, validate surviving media, reconstruct the missing recorder entry from git
 - [MULTI-USER.md](references/MULTI-USER.md) — Team mode: user identity resolution, per-user flight logs, shared attributed recorder, legacy migration, concurrency on synced folders
 - [INTEGRATIONS.md](references/INTEGRATIONS.md) — Integration points (GSD, Canon Keeper, planning files, case study) and best practices
