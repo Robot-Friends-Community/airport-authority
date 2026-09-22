@@ -34,15 +34,16 @@ Restore complete project context from `FLIGHT-LOG.md` (or a Baggage Claim `BAGGA
 7. GSD: `.planning/phases/*/.continue-here.md` (most recent)
 
 ```bash
-# Same order as the list above: flight log (cwd, git root) → Baggage Claim bag → legacy handoff.
-# The FIRST hit wins. Outside a git repo GIT_ROOT falls back to the cwd (never the filesystem root).
+# Same order as the list above; the FIRST hit wins (GSD's continue file is the last resort).
+# Outside a git repo GIT_ROOT falls back to the cwd, never the filesystem root.
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-for f in FLIGHT-LOG.md "$GIT_ROOT/FLIGHT-LOG.md"          BAGGAGE.md "$GIT_ROOT/BAGGAGE.md"          HANDOFF-ALLEYOOP.md "$GIT_ROOT/HANDOFF-ALLEYOOP.md"; do
+GSD=$(ls -t .planning/phases/*/.continue-here.md 2>/dev/null | head -1)
+for f in FLIGHT-LOG.md "$GIT_ROOT/FLIGHT-LOG.md" \
+         BAGGAGE.md "$GIT_ROOT/BAGGAGE.md" \
+         HANDOFF-ALLEYOOP.md "$GIT_ROOT/HANDOFF-ALLEYOOP.md" \
+         "${GSD:-/dev/null/none}"; do
   test -f "$f" && echo "found:$f" && break
 done
-
-# Check for GSD continue files
-ls -t .planning/phases/*/.continue-here.md 2>/dev/null | head -1
 ```
 
 **If not found:**
