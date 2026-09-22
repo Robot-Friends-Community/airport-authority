@@ -9,6 +9,9 @@ All notable changes to Airport Authority are documented here. Format loosely fol
 - Lineage: gen 1 is now [Baggage Claim](https://github.com/Robot-Friends-Community/baggage-claim) (no-look-pass renamed, 3.0.0) — the beginner edition.
 - `/landing` (and `/slamdunk`) also look for a Baggage Claim `BAGGAGE.md`, so upgrading from the beginner edition needs no manual step.
 
+### Fixed
+- `/landing` / `/slamdunk` locate-handoff snippet now checks in the same order as the priority list (flight log in cwd and git root before any `BAGGAGE.md`, first hit wins, GSD's `.continue-here.md` included as the last candidate; outside a git repo the git-root probe falls back to the cwd) — previously a `./BAGGAGE.md` could shadow a git-root `FLIGHT-LOG.md` and the GSD file was printed regardless of earlier hits.
+
 ## [1.0.0] — 2026-08-05
 
 First public release — the gen-3 successor to

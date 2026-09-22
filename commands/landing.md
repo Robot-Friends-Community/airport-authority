@@ -34,19 +34,16 @@ Restore complete project context from `FLIGHT-LOG.md` (or a Baggage Claim `BAGGA
 7. GSD: `.planning/phases/*/.continue-here.md` (most recent)
 
 ```bash
-# Check current dir (new name first, then Baggage Claim, then legacy)
-test -f FLIGHT-LOG.md && echo "found:FLIGHT-LOG.md"
-test -f BAGGAGE.md && echo "found:BAGGAGE.md"
-test -f HANDOFF-ALLEYOOP.md && echo "found:HANDOFF-ALLEYOOP.md"
-
-# Check git root
-GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
-test -f "$GIT_ROOT/FLIGHT-LOG.md" && echo "found:$GIT_ROOT/FLIGHT-LOG.md"
-test -f "$GIT_ROOT/BAGGAGE.md" && echo "found:$GIT_ROOT/BAGGAGE.md"
-test -f "$GIT_ROOT/HANDOFF-ALLEYOOP.md" && echo "found:$GIT_ROOT/HANDOFF-ALLEYOOP.md"
-
-# Check for GSD continue files
-ls -t .planning/phases/*/.continue-here.md 2>/dev/null | head -1
+# Same order as the list above; the FIRST hit wins (GSD's continue file is the last resort).
+# Outside a git repo GIT_ROOT falls back to the cwd, never the filesystem root.
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+GSD=$(ls -t .planning/phases/*/.continue-here.md 2>/dev/null | head -1)
+for f in FLIGHT-LOG.md "$GIT_ROOT/FLIGHT-LOG.md" \
+         BAGGAGE.md "$GIT_ROOT/BAGGAGE.md" \
+         HANDOFF-ALLEYOOP.md "$GIT_ROOT/HANDOFF-ALLEYOOP.md" \
+         "${GSD:-/dev/null/none}"; do
+  test -f "$f" && echo "found:$f" && break
+done
 ```
 
 **If not found:**
