@@ -35,8 +35,8 @@ Restore complete project context from `FLIGHT-LOG.md` (or a Baggage Claim `BAGGA
 
 ```bash
 # Same order as the list above: flight log (cwd, git root) → Baggage Claim bag → legacy handoff.
-# The FIRST hit wins.
-GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+# The FIRST hit wins. Outside a git repo GIT_ROOT falls back to the cwd (never the filesystem root).
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 for f in FLIGHT-LOG.md "$GIT_ROOT/FLIGHT-LOG.md"          BAGGAGE.md "$GIT_ROOT/BAGGAGE.md"          HANDOFF-ALLEYOOP.md "$GIT_ROOT/HANDOFF-ALLEYOOP.md"; do
   test -f "$f" && echo "found:$f" && break
 done
