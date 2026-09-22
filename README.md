@@ -47,11 +47,11 @@ Airport Authority is **gen 3** of an idea Robot Friends has been refining in the
 
 | Gen | Project | The idea |
 |-----|---------|----------|
-| 1 | [no-look-pass](https://github.com/Robot-Friends-Community/no-look-pass) | Throw your context to a spot and trust you'll catch it. Context handoff, one skill. |
+| 1 | [Baggage Claim](https://github.com/Robot-Friends-Community/baggage-claim) *(formerly no-look-pass)* | Check your context in, claim it on the other side. Two commands, one file — the beginner edition. |
 | 2 | flight-deck | The handoff grows a black box — an accumulating build log across sessions. |
 | 3 | **Airport Authority** | The whole tower: continuity **+** durable project memory **+** repo hygiene **+** a fleet view, as one plugin. |
 
-If all you want is the original one-skill handoff, no-look-pass still does exactly that.
+If all you want is the handoff, Baggage Claim does exactly that in two commands (`/checkin`, `/claim`) and nothing else; its `BAGGAGE.md` is read by `/landing` here, so you can upgrade whenever you outgrow it.
 Airport Authority is for when a handoff isn't enough and you want the whole airport.
 
 ---

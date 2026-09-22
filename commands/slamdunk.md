@@ -13,7 +13,7 @@ allowed-tools:
 <command-name>slamdunk</command-name>
 
 <objective>
-Restore complete project context from `FLIGHT-LOG.md` (or legacy `HANDOFF-ALLEYOOP.md`) and suggest the next action to continue work.
+Restore complete project context from `FLIGHT-LOG.md` (or a Baggage Claim `BAGGAGE.md` / legacy `HANDOFF-ALLEYOOP.md`) and suggest the next action to continue work.
 </objective>
 
 <execution_context>
@@ -27,18 +27,22 @@ Restore complete project context from `FLIGHT-LOG.md` (or legacy `HANDOFF-ALLEYO
 
 1. `FLIGHT-LOG.md` in current directory
 2. `FLIGHT-LOG.md` in git root
-3. `HANDOFF-ALLEYOOP.md` in current directory (legacy)
-4. `HANDOFF-ALLEYOOP.md` in git root (legacy)
-5. GSD: `.planning/phases/*/.continue-here.md` (most recent)
+3. `BAGGAGE.md` in current directory (Baggage Claim — the beginner edition; upgrading users land here)
+4. `BAGGAGE.md` in git root
+5. `HANDOFF-ALLEYOOP.md` in current directory (legacy no-look-pass)
+6. `HANDOFF-ALLEYOOP.md` in git root (legacy)
+7. GSD: `.planning/phases/*/.continue-here.md` (most recent)
 
 ```bash
-# Check current dir (new name first, then legacy)
+# Check current dir (new name first, then Baggage Claim, then legacy)
 test -f FLIGHT-LOG.md && echo "found:FLIGHT-LOG.md"
+test -f BAGGAGE.md && echo "found:BAGGAGE.md"
 test -f HANDOFF-ALLEYOOP.md && echo "found:HANDOFF-ALLEYOOP.md"
 
 # Check git root
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
 test -f "$GIT_ROOT/FLIGHT-LOG.md" && echo "found:$GIT_ROOT/FLIGHT-LOG.md"
+test -f "$GIT_ROOT/BAGGAGE.md" && echo "found:$GIT_ROOT/BAGGAGE.md"
 test -f "$GIT_ROOT/HANDOFF-ALLEYOOP.md" && echo "found:$GIT_ROOT/HANDOFF-ALLEYOOP.md"
 
 # Check for GSD continue files

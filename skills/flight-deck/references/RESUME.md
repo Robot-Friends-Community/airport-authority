@@ -14,8 +14,9 @@ Check in order (project root and git root):
 1. `FLIGHT-LOG.<user>.<lane>.md` — **your lane's** handoff (only when a lane is resolved)
 2. `FLIGHT-LOG.<user>.md` — **your own** handoff (multi-user mode)
 3. `FLIGHT-LOG.md` — legacy single-user handoff (fallback). If it's a **router/index** (lists/points at other flight logs rather than a single session), follow its pointers instead of loading it as a handoff — do **not** treat it as your session state.
-4. `HANDOFF-ALLEYOOP.md` (legacy)
-5. GSD: `.planning/phases/*/.continue-here.md`
+4. `BAGGAGE.md` — a [Baggage Claim](https://github.com/Robot-Friends-Community/baggage-claim) bag (the beginner edition). Read it as a handoff; on the next `/takeoff` write a `FLIGHT-LOG` instead and offer to remove the bag.
+5. `HANDOFF-ALLEYOOP.md` (legacy no-look-pass)
+6. GSD: `.planning/phases/*/.continue-here.md`
 
 **Surface the whole board, don't load it.** Glob `FLIGHT-LOG.*` in the project root (separator `[.-]`, so lane logs and hand-rolled dash-named logs are both visible). List any belonging to **other lanes of yours** or to **other users** in the summary (name/lane + how stale) so you see everything live in this folder — but restore context **only from your own** resolved log. Offer to peek at another on request; never overwrite it.
 

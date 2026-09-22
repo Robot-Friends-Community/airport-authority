@@ -5,6 +5,10 @@ All notable changes to Airport Authority are documented here. Format loosely fol
 
 ## [Unreleased]
 
+### Changed
+- Lineage: gen 1 is now [Baggage Claim](https://github.com/Robot-Friends-Community/baggage-claim) (no-look-pass renamed, 3.0.0) — the beginner edition.
+- `/landing` (and `/slamdunk`) also look for a Baggage Claim `BAGGAGE.md`, so upgrading from the beginner edition needs no manual step.
+
 ## [1.0.0] — 2026-08-05
 
 First public release — the gen-3 successor to
