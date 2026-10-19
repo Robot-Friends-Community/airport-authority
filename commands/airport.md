@@ -44,7 +44,7 @@ If identity already exists, skip silently to routing.
 <step name="route">
 **Route by classification** using AskUserQuestion so the traveler just picks a destination:
 
-**Unscaffolded (empty folder)** → offer to build it out via **`hangar`**. Walk hangar's forks with them: is this a **client** project, an **ecosystem** (multi-repo/site), or a **standalone/org** project? Pass the answer to hangar. **Offer `beads-team-setup` as an optional stop** if more than one person will touch it (team task board). Then hangar wires the real surfaces (flight-deck, bible/tome, beads, client CoS, env/secrets).
+**Unscaffolded (empty folder)** → offer to build it out. **Personal / homelab / single-repo, one person → `hangar-lite`** if that skill is installed (light: repo + CLAUDE.md + README + Flight Recorder + decisions log + beads label); it is an optional companion, not bundled — if absent, use `hangar`. **Client, team, or ecosystem → full `hangar`**. Walk hangar's forks with them: is this a **client** project, an **ecosystem** (multi-repo/site), or a **standalone/org** project? Pass the answer to hangar. **Offer `beads-team-setup` as an optional stop** if more than one person will touch it (team task board). Then hangar wires the real surfaces (flight-deck, bible/tome, beads, client CoS, env/secrets).
 
 **Unmanaged (fresh project, no surfaces)** → offer the lighter-weight setup: initialize a Flight Recorder (`/takeoff init-recorder`), optionally a Tome/Bible if it's canon-bearing, and a first `/takeoff` to lay down a flight log. Don't force hangar's full scaffold on an existing codebase.
 

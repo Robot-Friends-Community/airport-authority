@@ -83,8 +83,64 @@ git log -1 --oneline 2>/dev/null || echo "No commits"
 4. **Decisions** - Key choices made and why?
 5. **Blockers** - Anything stuck or problematic?
 6. **Next action** - Specific first thing to do when resuming?
+7. **Listeners** - Was anything *polling* this session (a session-bus listener, a Sam-watch,
+   a CI/deploy watch)? A `/clear` kills every loop and background task, so the flight log is
+   the only thing that can carry it across. Record each one under `## Listeners` (below) with
+   its **re-arm command**, so `/landing` restarts it without anyone remembering.
 
 **If any of these are unclear**, ask the user to clarify.
+</step>
+
+<step name="capture-open-loops">
+**Did this session send a `sidebar` ASK that is still unanswered?**
+
+**Gate:** only if `~/.claude/skills/sidebar/scripts/sidebar.py` exists - `sidebar` is an optional
+companion, not a dependency. If absent, skip silently.
+
+Run `python ~/.claude/skills/sidebar/scripts/sidebar.py loops <my-slug>` (`<my-slug>` = this
+session's BUS slug, not the `<user>` identity) and record every still-open ask under
+`## Open Loops` in the flight log. Only an `ask` creates a loop; a notify or handover does not.
+Drop any loop that has since been answered - a closed loop that lingers reads as live.
+
+**An unanswered peer ask must never vanish behind a `🧹 SAFE TO /clear`.**
+**Record outcome** for the confirm step: `Open Loops: [N carried | none | sidebar not installed]`.
+</step>
+
+<step name="preserve-work">
+**Don't lose good work that lives OUTSIDE git. Run HANDOFF.md §5.8 BEFORE git-hygiene** so anything rescued gets
+committed in the same pass.
+
+1. **Salvage:** list what this session left in the scratchpad, temp folders and worktrees. Move each KEEP item
+   (reusable script/tool, source art, captures, keeper prompts, generated originals) into the repo with a README.
+   List the DISCARD items in the report; never delete them silently.
+2. **Back up local-only deliverables:** gitignored renders, media and exports made this session that have no
+   off-machine copy. Copy them to the project's recorded backup location. If there's none, ask once and record it
+   in project memory. Verify by checksum and leave a README.txt. Never delete originals; only *offer* to prune drafts.
+3. **Capture know-how:**
+   - a repeatable procedure with no SOP → offer to write one;
+   - an unrecorded real choice → write the decision file;
+   - global gotchas → `bd remember`;
+   - user feedback → project MEMORY.md.
+4. **Feed the case study:** if the project has portfolio intent or the session made visible before/after change,
+   append this session's numbers and quotes and keep the "before" files for slider comparisons. Offer to start the
+   draft with the `case-study` skill if none exists.
+
+**Record outcome:** `preserved: N salvaged, M backed up (checksummed) to <where>, SOPs, memories, case study` |
+`nothing to preserve` | `needs user: backup location unknown`. A KEEP item still only in scratch/temp, or a
+local-only deliverable with no off-machine copy, **blocks** `SAFE TO /clear`.
+</step>
+
+<step name="git-hygiene">
+**Make sure the session's work is actually backed up - execute HANDOFF.md §5.7.**
+
+Delegate the sweep to `flight-engineer` (git / backups-PRs / secrets dimensions); if it isn't
+installed, fall back to inline checks so takeoff still protects the user. Per the standing git
+authorization: commit at this checkpoint on a **feature branch, never straight to `main`**, push
+unpushed commits, open a PR when a feature is done, and surface the merge as **the human step**.
+🔴 HARD STOP if a `.env` / key / secret is about to be committed - name the file, do not commit.
+
+**Record outcome** for the confirm step: `committed+pushed (N) | PR #N opened | merge awaiting
+human | secret blocked | clean | not a repo | flight-engineer unavailable -> inline fallback`.
 </step>
 
 <step name="write-handoff">
@@ -131,6 +187,25 @@ scaffolding: [gsd | planning-files | project-log | none]
 
 ## Next Action
 **Start with:** [Specific, actionable first step]
+
+## Open Loops
+<!-- MANDATORY whenever this session sent a `sidebar` ASK that is still unanswered. A /clear erases
+     the fact that you are owed a reply; this section is the only thing that carries it.
+     Generate with: python ~/.claude/skills/sidebar/scripts/sidebar.py loops <my-slug>
+     (skip if that script isn't installed - `sidebar` is an optional companion, not a dependency)
+     Only an `ask` creates a loop - a notify/handover does not. Omit the section when none.
+     NEVER carry a loop that has been answered: a closed loop that lingers reads as live. -->
+- **`[peer-name]`** · asked `[when]` · id `[sidebar id]` · reply to `[my-slug]`
+  - **Asked:** [the question, self-contained]
+  - **Blocks:** [what decision is waiting on this]
+  - **On silence:** [what you will do if no reply - REQUIRED; `sidebar.py send` refuses an ask without it]
+  - **Peer cwd:** [their absolute path if you learned it from their reply - omit the line if you did not]
+
+## Listeners
+<!-- omit the section if nothing was polling. One line per listener; landing re-arms every
+     `re-arm:` line automatically (Bash, run_in_background) after a catch-up read. -->
+- **bus** · slug `[my-slug]` · threads `[thread_ts ...]` · re-arm: `bash ~/.claude/skills/session-bus/scripts/listen.sh [my-slug] [thread_ts ...]`
+- **[other watch]** · waiting on `[what]` · re-arm: `[command]` · stand down when: `[condition]`
 
 ## Context Notes
 [Mental state, approach, anything the next session needs to know]
@@ -192,6 +267,7 @@ ls BIBLE*.md */BIBLE*.md **/BIBLE*.md 2>/dev/null | head   # Bibles (depth ≤3)
   ✅ Flight log      FLIGHT-LOG.<user>.md
   ✅ Flight Recorder Entry #N appended ([mode])   ← omit if not configured
   ✅ Bible / Tome    [front page refreshed + log appended]   ← omit if not configured
+  ✅ Preserved       [N salvaged into repo · M files backed up to <where> (checksummed) · SOPs/memories/case study]   ← or "nothing outside git to preserve"
   ⚠️ Gaps            [warranted-but-missing surface + its fix, e.g. "Flight Recorder not set up → /takeoff init-recorder"]   ← REQUIRED line whenever a warranted surface (recorder / Tome / Bible) is missing; omit only if there are none
 
   📋 Objective   [brief]
