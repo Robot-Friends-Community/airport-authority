@@ -1,6 +1,7 @@
 ---
 name: hangar
-description: Full project ignition the opinionated way — scaffold a new project across its two homes (an S: planning/research hub + a C: code home linked by a private GitHub repo) AND wire up every durable-memory surface using the REAL skills: flight-deck Flight Recorder (multi-user), bible-keeper Bible, canon-keeper Tome (for ecosystems), beads task OS (shared-safe), and — for client projects — a named client Chief-of-Staff agent via client-assistant. USE WHEN the user says "new project", "scaffold this project", "set up a new project", "start a project", "spin up a project properly", "hangar", "set up the folders + repo", "start a client project", or a project moves from ad-hoc exploration into a real, tracked build. NOT for scaffolding code frameworks (use nextjs-init), single GitHub repos in isolation (use a repo-standard skill), or AI-workflow folders (use workspace-architect).
+description: |
+  Full project ignition the opinionated way — scaffold a new project across its two homes (an S: planning/research hub + a C: code home linked by a private GitHub repo) AND wire up every durable-memory surface using the REAL skills: flight-deck Flight Recorder (multi-user), bible-keeper Bible, canon-keeper Tome (for ecosystems), beads task OS (shared-safe), and — for client projects — a named client Chief-of-Staff agent via client-assistant. USE WHEN the user says "new project", "scaffold this project", "set up a new project", "start a project", "spin up a project properly", "hangar", "set up the folders + repo", "start a client project", or a project moves from ad-hoc exploration into a real, tracked build. NOT for scaffolding code frameworks (use nextjs-init), single GitHub repos in isolation (use a repo-standard skill), or AI-workflow folders (use workspace-architect).
 ---
 
 # Hangar — Project Ignition
@@ -8,6 +9,8 @@ description: Full project ignition the opinionated way — scaffold a new projec
 Where a project gets built and prepped before it ever flies. Hangar turns an exploration into a real, tracked build: the two-home folder structure, the repo, and every durable-memory surface the aviation-family skills expect (`flight-deck` / `takeoff` / `landing` / `preflight` all assume these exist — hangar is what installs them).
 
 **Design principle — delegate, don't hand-author.** Each durable surface has ONE owning skill and ONE source of truth. Hangar does not write its own recorder/bible/tome markdown; it *invokes* the real skills so the files are the genuine, tool-maintained artifacts. That way `/takeoff`, `/bible-keeper`, and `/canon-keeper` keep working against them forever.
+
+> **Personal / homelab / single-surface project?** Use **`hangar-lite`** instead — one C: home + private repo + CLAUDE.md + README + Flight Recorder + decisions log + beads label, no S: hub/Bible/Tome. Upgrade to full hangar later if it grows.
 
 ## The pattern (and why)
 

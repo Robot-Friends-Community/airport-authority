@@ -8,6 +8,7 @@ allowed-tools:
   - Grep
   - AskUserQuestion
   - Skill
+  - ListAgents
 ---
 
 <command-name>landing</command-name>
@@ -25,7 +26,10 @@ Restore complete project context from `FLIGHT-LOG.md` (or a Baggage Claim `BAGGA
 <step name="locate-handoff">
 **Find handoff file in priority order:**
 
-1. `FLIGHT-LOG.md` in current directory
+0. `FLIGHT-LOG.<user>.md` in current directory — **check this FIRST**; multi-user mode is the
+   default, so this is the normal filename. Resolve `<user>` from flight-deck `config.yml` → git →
+   OS. If several exist, load your own and list the others as `👥 Also here`.
+1. `FLIGHT-LOG.md` in current directory (single-user / legacy)
 2. `FLIGHT-LOG.md` in git root
 3. `BAGGAGE.md` in current directory (Baggage Claim — the beginner edition; upgrading users land here)
 4. `BAGGAGE.md` in git root
@@ -34,6 +38,7 @@ Restore complete project context from `FLIGHT-LOG.md` (or a Baggage Claim `BAGGA
 7. GSD: `.planning/phases/*/.continue-here.md` (most recent)
 
 ```bash
+ls FLIGHT-LOG.*.md 2>/dev/null   # multi-user (default) — pick your own <user>
 # Same order as the list above; the FIRST hit wins (GSD's continue file is the last resort).
 # Outside a git repo GIT_ROOT falls back to the cwd, never the filesystem root.
 GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
@@ -71,7 +76,7 @@ git -C "$GIT_ROOT" log -1 --format=%cd --date=iso
 Also enter Recovery mode if the user explicitly says they crashed / exited by accident /
 "recover" / "pick up after a crash".
 
-**If the fingerprint is present → follow the skill's `references/RECOVERY.md`**
+**If the fingerprint is present → follow [references/RECOVERY.md](../skills/flight-deck/references/RECOVERY.md)**
 (establish last known-good → place the crash on the git timeline → classify untracked files
 by MTIME → validate surviving media → recover unsaved deliverables → reconstruct the missing
 recorder entry via `/takeoff`), THEN continue the normal landing below.
@@ -126,6 +131,59 @@ Detect the same surfaces (`TOME.md` at root; `.bible-keeper.json` / `BIBLE*.md` 
 - If **none exist but the project warrants one** (CLAUDE.md + real multi-session / ecosystem build), stage a one-line create nudge (don't force).
 </step>
 
+<step name="drain-sidebar">
+**Catch up Open Loops + the sidebar mailbox — BEFORE re-arming listeners. Execute RESUME.md §2.6.5.**
+
+**Gate:** only if `~/.claude/skills/sidebar/scripts/sidebar.py` exists. `sidebar` is an OPTIONAL
+companion skill, not a dependency — if it is absent, skip silently. The one exception: if the
+flight log carries an `## Open Loops` section, say `Mailbox: sidebar not installed — N loops
+carried, unreconciled` in the banner rather than dropping a peer who is owed a reply.
+
+**Resolve `<my-slug>` first** — the SESSION slug (the `slug` on the `## Listeners` bus line, or
+`reply to` on an `## Open Loops` entry), NOT the `<user>` identity. Never guess it: a flight log
+often contains a *plausible wrong* slug (a bus slug, a repo name), and reaching for the only
+slug-shaped string in the log is exactly how this fails. No slug in the flight log and no sidebar
+message ever sent → no mailbox, skip.
+
+**The tool now checks you.** An unknown slug exits **3** and prints the known slugs on stderr
+(fixed 2026-09-23, `beads-5h5r`; it previously exited 0 with a clean "no messages" and produced a
+real false all-clear). Treat exit 3 as **REPORT, NEVER SKIP** — unlike every other non-zero here:
+- **Do not print a mailbox count.** Banner: `📬 Mailbox ⚠️ UNKNOWN SLUG '<slug>' — NOT verified clean`,
+  plus the known-slug list the script printed.
+- Re-run with the correct slug from that list, then report the real count.
+- `--new` suppresses the guard — use it only for a genuinely first-run slug, never to quiet an error.
+
+1. **Count, then drain** — `sidebar.py peek <my-slug>` (non-consuming) for the banner count, then
+   `sidebar.py read <my-slug>`. `read` advances the watermark **permanently** — copy its output
+   into `📬 Mailbox` immediately.
+2. **Reconcile loops** — `sidebar.py loops <my-slug>` against the flight log's `## Open Loops`.
+   Answered → `sidebar.py close <id> --me <my-slug>` and drop it from the log. Still open → check
+   the peer with `ListAgents` (unavailable → report `peer liveness unknown`, never assume alive)
+   and apply its **On silence** clause.
+3. **Graduate** a loop that has outlived a session into a bead, and close the sidebar loop pointing
+   at it.
+</step>
+
+<step name="rearm-listeners">
+**Re-arm anything that was polling — read `## Listeners` in the flight log.**
+
+A `/clear` killed every loop and background task the last session had running; the flight log
+is the only record. If the section exists (skip silently if not):
+
+1. **Catch up first, before re-arming.** For a bus listener run one synchronous tick —
+   `bash ~/.claude/skills/session-bus/scripts/bus.sh watch <slug> <thread_ts ...>` — and stage
+   anything new for the banner (`📡 Bus`). Deposits made while the session was down are durable;
+   this is where they surface. Act on them *after* the summary, not silently.
+2. **Re-arm each `re-arm:` command** with the Bash tool, `run_in_background: true`. The listener
+   exits (and wakes you) on the first activity that isn't your own post, or after its 9-minute window (the Bash tool silently kills background tasks at 10 min) — re-arm on an "elapsed" wake while still building/waiting; pass `timeout: 600000`.
+3. **Announce it on the bus** if it's a bus listener — a `status` ping saying the session is back
+   and listening, so peers stop assuming you're down.
+4. Show what's armed in the banner (`📡 Listeners`).
+
+Do **not** re-arm a listener whose `stand down when:` condition has already been met (e.g. the
+reply it was waiting for is in the catch-up read) — say so in the banner instead.
+</step>
+
 <step name="present-summary">
 **Display restoration summary.** Left-anchored under fixed `═`/`─` rules; emojis as section markers; no right border (emoji misalign it); omit any section that doesn't apply. See RESUME.md §4 for the full conventions.
 
@@ -148,7 +206,11 @@ Detect the same surfaces (`TOME.md` at root; `.bible-keeper.json` / `BIBLE*.md` 
 
   🚧 Blockers    [None | list with status]
   📼 Recorder    [N] entries · Lenses: [Technical, Journey, Patterns]
+  📬 Mailbox     [N drained from the sidebar log — one line each]   ← omit if none
+  🔁 Open Loops  [N awaiting reply · peer · what it blocks · peer alive?]   ← omit if none
   📖 Bible / Tome   [status · ⚠️ front page N behind recorder]   ← omit if n/a
+  📡 Bus         [N new since takeoff — one line each]          ← only if ## Listeners exists
+  📡 Listeners   [bus `slug` on N threads · re-armed ✓ | stood down: <why>]   ← only if ## Listeners exists
   ─────────────────────────────────────────────
   🔄 Since handoff   [new commits / file changes]   ← only if state changed
 ═══════════════════════════════════════════════════

@@ -2,11 +2,15 @@
 """
 relaunch_sessions.py — reopen all your Claude Code sessions after a restart (Windows + Windows Terminal).
 
-Opens ONE Windows Terminal window with a tab per session, each:
+Rebuilds your Windows Terminal layout with a tab per session, each:
   - titled exactly as you had it (name + order preserved) and title-LOCKED
   - cd'd into that session's folder
   - started in bypass-permissions mode (--dangerously-skip-permissions)
-  - auto-running /landing so it restores from that folder's FLIGHT-LOG.md
+  - opened at a bare prompt (NO auto-/landing) unless you pass --landing
+
+MULTI-WINDOW: give any session a "window" key in the config and it opens in that WT window,
+so a multi-window layout (e.g. infra / client / creative groupings) is preserved instead of
+being flattened into one 39-tab window. Sessions without a "window" key go to the default.
 
 Title-lock: tabs launch under a hidden WT profile ("Claude Relaunch") with
 suppressApplicationTitle=true, so Claude Code can't overwrite your tab names. Your normal tabs are
@@ -21,7 +25,7 @@ Common usage:
     python relaunch_sessions.py --detect --save-config    # bootstrap the config from detection
     python relaunch_sessions.py                          # relaunch from the saved config
     python relaunch_sessions.py --dry-run                # preview, launch nothing
-    python relaunch_sessions.py --no-landing             # open at the prompt, don't auto-run /landing
+    python relaunch_sessions.py --landing                # also auto-run /landing in each tab
     python relaunch_sessions.py --setup-profile          # only (re)create the WT title-lock profile
 
 It only LAUNCHES — never kills anything. Close your current sessions first, then run it.
@@ -36,6 +40,15 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+
+# Force UTF-8 stdout/stderr on Windows so emoji/box chars don't crash under cp1252
+# (equivalent to PYTHONUTF8=1, but self-contained — no shell-specific env prefix needed).
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
 
 CONFIG_PATH     = Path.home() / ".claude" / "session-relaunch.json"
 WT_WINDOW       = "session-relaunch"
@@ -146,8 +159,8 @@ def build_pwsh_command(path: str, run_landing: bool) -> str:
     return f"Set-Location -LiteralPath '{path}' && {launch}"
 
 
-def wt_args(title: str, path: str, run_landing: bool, use_profile: bool) -> list[str]:
-    argv = ["wt", "-w", WT_WINDOW, "new-tab"]
+def wt_args(title: str, path: str, run_landing: bool, use_profile: bool, window: str = WT_WINDOW) -> list[str]:
+    argv = ["wt", "-w", window, "new-tab"]
     if use_profile:
         argv += ["--profile", PROFILE_NAME]
     argv += ["--title", title, "pwsh", "-NoExit", "-Command", build_pwsh_command(path, run_landing)]
@@ -163,7 +176,10 @@ def main() -> int:
     ap.add_argument("--save-config", action="store_true", help="write the resolved list to --config and exit")
     ap.add_argument("--setup-profile", action="store_true", help="only (re)create the WT title-lock profile")
     ap.add_argument("--no-setup", action="store_true", help="skip the WT profile step")
-    ap.add_argument("--no-landing", action="store_true", help="don't auto-run /landing")
+    ap.add_argument("--landing", action="store_true",
+                    help="auto-run /landing in each tab (default: open at a bare prompt)")
+    ap.add_argument("--no-landing", action="store_true",
+                    help="(default; kept for back-compat) open at a bare prompt")
     ap.add_argument("--dry-run", action="store_true", help="print the wt commands, launch nothing")
     args = ap.parse_args()
 
@@ -188,16 +204,21 @@ def main() -> int:
     if use_profile and not args.dry_run:
         use_profile = ensure_profile()
 
-    run_landing = not args.no_landing
-    print(f"{'DRY RUN - ' if args.dry_run else ''}Relaunching {len(sessions)} session(s) into WT window "
-          f"'{WT_WINDOW}' | bypass=on | landing={'on' if run_landing else 'off'} | "
+    # Landing is OFF by default: the normal flow is /takeoff before the restart, then pick work
+    # back up deliberately in each tab. --landing opts back in to auto-restore.
+    run_landing = args.landing
+    windows = list(dict.fromkeys(s.get("window", WT_WINDOW) for s in sessions))
+    win_desc = f"{len(windows)} window(s): {', '.join(windows)}"
+    print(f"{'DRY RUN - ' if args.dry_run else ''}Relaunching {len(sessions)} session(s) into "
+          f"{win_desc} | bypass=on | landing={'on' if run_landing else 'off'} | "
           f"title-lock={'on' if use_profile else 'off'}\n")
 
     for s in sessions:
         title, path = s["title"], s["path"]
+        window = s.get("window", WT_WINDOW)
         flag = "" if Path(path).exists() else "  [!! path not found - launching anyway]"
-        print(f"  - {title:<14} {path}{flag}")
-        argv = wt_args(title, path, run_landing, use_profile)
+        print(f"  - [{window}] {title:<14} {path}{flag}")
+        argv = wt_args(title, path, run_landing, use_profile, window)
         if args.dry_run:
             print("      " + " ".join(f'"{a}"' if " " in a else a for a in argv))
             continue
@@ -209,7 +230,12 @@ def main() -> int:
         time.sleep(INTER_TAB_DELAY)
 
     if not args.dry_run:
-        print("\nLaunched. In each tab, /landing restores that folder's FLIGHT-LOG.md.")
+        if run_landing:
+            print("\nLaunched. In each tab, /landing restores that folder's FLIGHT-LOG.md.")
+        else:
+            print(f"\nLaunched {len(sessions)} tab(s) across {len(windows)} window(s), "
+                  "bypass mode, at a bare prompt.\n"
+                  "No /landing was run — type /landing in any tab to restore its FLIGHT-LOG.md.")
     return 0
 
 

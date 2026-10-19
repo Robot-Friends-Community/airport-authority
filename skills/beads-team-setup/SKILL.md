@@ -1,6 +1,7 @@
 ---
 name: beads-team-setup
-description: Set up beads (bd) correctly for a SHARED / multi-user / multi-machine project so it never wedges, plus diagnose and recover a beads/Dolt server that is already stuck. USE WHEN starting beads on a team project, when "multiple people need to use beads", "share the board across machines", "assign each other beads", "who created this bead / attribution", OR when bd is broken with "Dolt server unreachable", "database is locked by another dolt process", "server started but not accepting connections", "beads won't start", "dolt locked", or a board lives on a network/shared drive (S:, G:, NAS, SMB). Encodes the hard-won lesson: never run a live Dolt DB off a shared network drive.
+description: |
+  Set up beads (bd) correctly for a SHARED / multi-user / multi-machine project so it never wedges, plus diagnose and recover a beads/Dolt server that is already stuck. USE WHEN starting beads on a team project, when "multiple people need to use beads", "share the board across machines", "assign each other beads", "who created this bead / attribution", OR when bd is broken with "Dolt server unreachable", "database is locked by another dolt process", "server started but not accepting connections", "beads won't start", "dolt locked", or a board lives on a network/shared drive (S:, G:, NAS, SMB). Encodes the hard-won lesson: never run a live Dolt DB off a shared network drive.
 ---
 
 # Beads Team Setup

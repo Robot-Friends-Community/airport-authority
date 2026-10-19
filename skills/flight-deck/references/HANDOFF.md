@@ -51,6 +51,8 @@ Collect from conversation and files:
 | Decisions | Key choices made with rationale |
 | Blockers | Issues encountered, workarounds |
 | Files | Modified but uncommitted paths |
+| Listeners | Anything polling this session — a `/loop`, a bus listener, a background watch |
+| Open Loops | Unanswered `sidebar` asks — `sidebar.py loops <my-slug>`; skip if sidebar isn't installed |
 
 **Ask user** if any critical context is unclear.
 
@@ -101,6 +103,29 @@ flight_recorder: [true | false]
 
 ## Next Action
 **Start with:** [Specific first action for next session]
+
+## Open Loops
+<!-- MANDATORY whenever this session sent a `sidebar` ASK that has not been answered. A /clear
+     erases the fact that you are owed a reply; this section is the only thing that carries it.
+     Generate with: python ~/.claude/skills/sidebar/scripts/sidebar.py loops <my-slug>
+     (skip if that script isn't installed — `sidebar` is an optional companion, not a dependency)
+     A notify/handover creates NO loop - only an `ask` does. Omit this section when there are none.
+     NEVER carry a loop that has been answered: a closed loop that lingers reads as live. -->
+- **`[peer-name]`** · asked `[when]` · id `[sidebar id]` · reply to `[my-slug]`
+  - **Asked:** [the question, self-contained]
+  - **Blocks:** [what decision is waiting on this]
+  - **On silence:** [what you will do if no reply — REQUIRED; `sidebar.py send` refuses an ask without it]
+  - **Peer cwd:** [their absolute path if you learned it from their reply/identity block — omit this line entirely if you never did; `sidebar.py loops` does NOT print it]
+
+## Listeners
+<!-- MANDATORY whenever anything was polling this session — a session-bus listener, a CI/deploy
+     watch, any background task you would want back. A /clear kills every loop + background task;
+     this section is the ONLY thing that carries one across, and landing re-arms each `re-arm:`
+     line verbatim. A takeoff that armed a listener and wrote no Listeners section has SILENTLY
+     DROPPED THE MESH: peers keep posting to a session that will never wake. Omit the section only
+     when genuinely nothing was polling. `bus.sh join` prints the bus line ready to paste. -->
+- **bus** · slug `[my-slug]` · threads `[thread_ts ...]` · re-arm: `bash ~/.claude/skills/session-bus/scripts/listen.sh [my-slug] [thread_ts ...]`
+- **[other watch]** · waiting on `[what]` · re-arm: `[command]` · stand down when: `[condition]`
 
 ## Context Notes
 [Mental state, approach being taken, anything important]
@@ -296,6 +321,61 @@ This **complements** (does not replace) the deterministic session-end git-remind
 
 **Record outcome** for Step 6: `committed+pushed` (N commits) / `PR #N opened` / `merge awaiting human` / `secret blocked` / `clean — nothing to do` / `not a repo` / `flight-engineer unavailable → inline fallback used`. Same anti-silent-skip discipline as Steps 3.5 / 3.6 — the outcome must surface in the Postflight report, not vanish.
 
+## 5.8. Preserve the Work — salvage sweep (run BEFORE 5.7's commit)
+
+> **Why this exists (2026-10-07, retro-cable-tv S39):** git hygiene only protects what is *in the repo*. That session's
+> best tools and media lived elsewhere: the sizzle-reel builder and its screen captures were in the session
+> **scratchpad** (wiped by `/clear` and cleanup), and 246 MB of master renders sat in a **gitignored** folder on one PC with
+> no other copy. Every check said "clean" while real work was one `/clear` from gone. the user: *"lets improve the
+> takeoff to do this so we dont lose any good work in future or other sessions."*
+
+Run this sweep **before** the 5.7 commit, so anything it moves into the repo is committed and pushed in the same pass.
+Work it as four checks, each ending in an explicit outcome, never a silent skip:
+
+**1. Salvage scratch and side work.** List what this session created or changed **outside the repo**: the session
+scratchpad directory, `/tmp` / `%TEMP%` files it wrote, and any **git worktrees** (`.claude/worktrees/*` or
+`git worktree list`) holding uncommitted changes or unpushed branches. Classify each item:
+- **KEEP:** a reusable script or tool, source art, captures used in a deliverable, a prompt that produced a keeper,
+  or a generated original. Move it into the repo at a sensible home (`docs/<area>/`, `tools/`, `scripts/`) with a
+  short README saying what it is and how to rerun it. Fix hard-coded scratch paths. Shrink heavy screenshots
+  (PNG → JPG). It then rides the 5.7 commit.
+- **DISCARD:** probes, debug output, one-off checks. Leave them, but **list** them in the report so nothing vanishes
+  unseen.
+- A worktree with real unpushed work gets pushed (or a PR) under 5.7. Never delete a worktree here.
+- **Prove each rescued file is really tracked:** after `git add`, run `git ls-files <path>` (or
+  `git check-ignore -v <file>`). A broad ignore rule (`media/`, `build/`, `out/`) silently skips files, and the PR
+  merges with broken references. (Seen 2026-10-07: a case study's 10 slider images missed because of `media/`.)
+
+**2. Back up local-only deliverables.** Find outputs this session made or changed that **git deliberately ignores**
+(renders, exports, video/audio, builds, generated media: check `git status --ignored` under the usual output
+folders) and that have **no off-machine copy**.
+- Look for the project's recorded backup location (project memory, CLAUDE.md, or a `README.txt` in an existing
+  backup folder).
+- **If there is none, ask the user once** where backups go, then record the answer in project memory, so later
+  sessions never ask again.
+- Copy the files and **verify by checksum** (compare sha256 lists), and drop a short `README.txt` in the backup
+  folder saying what's there and how to refresh it.
+- Never delete originals. **Offer** (don't do) to prune superseded drafts, and only after the backup verifies.
+
+**3. Capture the know-how.**
+- A **repeatable procedure** this session worked out by hand, with no SOP yet → offer to write one (the project's
+  SOP folder, e.g. `docs/sop/`). Default YES when the user will clearly do it again (another holiday, another batch).
+- **Real choices** made without a decision record → write the decision file (the project's `docs/decisions/` habit).
+- **Global gotchas** (tool, CLI, browser, API) → `bd remember`. **Behavioral feedback** from the user → project
+  `MEMORY.md` (per the Persistent Memory Protocol). Search before writing; no duplicates.
+
+**4. Feed the portfolio / case study.** If the project has case-study intent (project memory, a `docs/case-study/`
+folder, or the user said so) **or** the session produced visible before/after change, then:
+- append this session's outcome, **numbers** and best user quotes to the case study draft;
+- register the **before/after pairs**: keep the "before" files, pulled from git history if needed, so the case study
+  can show them as draggable sliders;
+- if no draft exists yet and the work warrants one, offer to start it with the `case-study` skill.
+
+**Record outcome** for Step 6, one line, e.g. `preserved: 2 salvaged into repo, 126 files backed up (checksummed) to
+<location>, 1 SOP offered, 2 gotchas remembered, case study +1 session` / `nothing to preserve` / `needs user:
+backup location unknown`. **A KEEP item still only in scratch/temp, or a local-only deliverable with no
+off-machine copy (and no explicit "skip it" from the user), is a postflight FAILURE**, not a warning.
+
 ## 6. Postflight Verification
 
 Before confirming completion, verify and report:
@@ -305,7 +385,9 @@ Before confirming completion, verify and report:
 - `.flight-recorder.yml session_count`: incremented
 - Central index: updated / disabled / not configured
 - Task DB sync: updated / disabled / not configured
+- Preserve the work (Step 5.8): salvaged / backed up (checksummed) / know-how captured / case study fed / nothing to preserve. **FAIL** if a KEEP item is still only in scratch/temp or a local-only deliverable has no off-machine copy (unless the user explicitly said to skip it)
 - Git & GitHub: committed+pushed / PR opened / merge awaiting human / secret blocked / clean / not a repo (Step 5.7 outcome)
+- Open Loops: [N carried / none / sidebar not installed] — an unanswered peer ask MUST NOT vanish behind a `SAFE TO /clear`
 - Bible/Tome: synced (front page refreshed + log appended) / already-done (closed via `/canon-keeper takeoff`) / offered→configured / offered→declined / not-appropriate / declined / disabled / not configured
   - **On a keeper project, `not configured` for the recorder but a stale Tome is a red flag** — if `FLIGHT-RECORDER.md` got an entry this session and `TOME.md`'s Current Session date did NOT advance, the front page drifted: report it, don't call takeoff complete.
 
@@ -339,9 +421,11 @@ The takeoff message has two jobs: summarize what was saved, and tell the user **
   ✅ Flight Recorder Entry #N appended ([mode])
   ✅ Beads           [N tasks synced]          ← omit line if not configured
   ✅ Bible / Tome    [front page refreshed + log appended]   ← omit if n/a
+  ✅ Preserved       [N salvaged into repo · M files backed up to <where> (checksummed) · SOPs/memories/case study]   ← or "nothing outside git to preserve" (Step 5.8)
 
   📋 Objective   [brief]
   📊 Progress    [X]% · [completed]/[total] items
+  🔁 Open Loops  [N carried — peer · what it blocks]   ← omit if none
   ➡️  Next        [first action for next session]
 
   ─────────────────────────────────────────────
@@ -361,6 +445,7 @@ The takeoff message has two jobs: summarize what was saved, and tell the user **
 
   📋 Objective   [brief]
   📊 Progress    [X]% · [completed]/[total] items
+  🔁 Open Loops  [N carried — peer · what it blocks]   ← omit if none
   ➡️  Next        [first action for next session]
 
   ─────────────────────────────────────────────
